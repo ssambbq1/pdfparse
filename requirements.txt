@@ -1,0 +1,5 @@
+Flask>=2.3.3
+Werkzeug>=2.3.7
+docling
+PyPDF2
+pymupdf4llm>=0.0.3

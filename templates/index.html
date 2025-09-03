@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Markdown Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 40px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.05);
+            transform: translateY(-2px);
+        }
+        
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn-upload {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+        
+        .btn-upload:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .page-input-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-input {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .page-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+        
+        .result-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+        
+        .tab-content {
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .markdown-content {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .table-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner-border {
+            color: #667eea;
+        }
+        
+        .file-info {
+            background: #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .download-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(45deg, #dc3545, #fd7e14);
+            color: white;
+        }
+        
+        .alert-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="text-center mb-4">
+                <h1 class="display-4 text-primary mb-3">
+                    <i class="fas fa-file-pdf text-danger me-3"></i>
+                    PDF to Markdown Converter
+                </h1>
+                <p class="lead text-muted">PDF 파일의 특정 페이지를 업로드하여 마크다운과 테이블로 변환하세요</p>
+            </div>
+            
+            <!-- 파일 업로드 영역 -->
+            <div class="upload-area" id="uploadArea">
+                <div class="mb-3">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                    <h4>PDF 파일을 여기에 드래그하거나 클릭하여 선택하세요</h4>
+                    <p class="text-muted">최대 파일 크기: 16MB</p>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf">
+                <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-upload me-2"></i>파일 선택
+                </button>
+            </div>
+            
+            <!-- 페이지 번호 입력 영역 -->
+            <div class="page-input-container" id="pageInputContainer">
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <label for="pageNumbers" class="form-label fw-bold">
+                            <i class="fas fa-file-alt me-2"></i>페이지 번호 입력
+                        </label>
+                        <input type="text" id="pageNumbers" class="form-control page-input" 
+                               placeholder="비워두면 전체 페이지 처리 (예: 1,2,3 또는 1-3)">
+                        <div class="form-text">비우면 전체 페이지를 처리합니다. 입력 시 쉼표/범위를 사용하세요.</div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="engine" class="form-label fw-bold">
+                            <i class="fas fa-microchip me-2"></i>엔진 선택
+                        </label>
+                        <select id="engine" class="form-select page-input">
+                            <option value="docling" selected>Docling</option>
+                            <option value="pymupdf">PyMuPDF (pymupdf4llm)</option>
+                        </select>
+                        <div class="form-text">Docling은 모델 다운로드로 초기 지연이 있을 수 있습니다.</div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-upload" onclick="processFile()" id="processBtn" disabled>
+                            <i class="fas fa-cogs me-2"></i>처리 시작
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3" id="fileInfoDisplay" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>선택된 파일:</strong> <span id="selectedFileName"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 로딩 표시 -->
+            <div class="loading" id="loading">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">PDF 파일을 처리하고 있습니다...</p>
+            </div>
+            
+            <!-- 결과 표시 영역 -->
+            <div class="result-section" id="resultSection">
+                <div class="file-info" id="fileInfo"></div>
+                
+                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="markdown-tab" data-bs-toggle="tab" data-bs-target="#markdown" type="button" role="tab">
+                            <i class="fas fa-file-alt me-2"></i>마크다운
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tables-tab" data-bs-toggle="tab" data-bs-target="#tables" type="button" role="tab">
+                            <i class="fas fa-table me-2"></i>테이블
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="resultTabContent">
+                    <div class="tab-pane fade show active" id="markdown" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5><i class="fas fa-file-alt me-2"></i>마크다운 결과</h5>
+                            <button class="btn download-btn" onclick="downloadMarkdown()">
+                                <i class="fas fa-download me-2"></i>다운로드
+                            </button>
+                        </div>
+                        <div class="markdown-content" id="markdownContent"></div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="tables" role="tabpanel">
+                        <h5><i class="fas fa-table me-2"></i>추출된 테이블</h5>
+                        <div id="tablesContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentMarkdown = '';
+        let currentFilename = '';
+        let selectedFile = null;
+        
+        // 파일 입력 처리
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        
+        // 드래그 앤 드롭 처리
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+        
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showAlert('PDF 파일만 업로드 가능합니다.', 'danger');
+                return;
+            }
+            
+            if (file.size > 16 * 1024 * 1024) {
+                showAlert('파일 크기는 16MB를 초과할 수 없습니다.', 'danger');
+                return;
+            }
+            
+            selectedFile = file;
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('fileInfoDisplay').style.display = 'block';
+            document.getElementById('processBtn').disabled = false;
+            showAlert('파일이 선택되었습니다. 페이지 번호를 입력하고 "처리 시작" 버튼을 클릭하세요.', 'success');
+        }
+        
+        function processFile() {
+            if (!selectedFile) {
+                showAlert('먼저 PDF 파일을 선택해주세요.', 'danger');
+                return;
+            }
+            
+            const pageNumbers = document.getElementById('pageNumbers').value.trim();
+            const engine = document.getElementById('engine').value;
+            uploadFile(selectedFile, pageNumbers, engine);
+        }
+        
+        function uploadFile(file, pageNumbers, engine) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('page_numbers', pageNumbers);
+            formData.append('engine', engine);
+            
+            showLoading(true);
+            hideResult();
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                
+                if (data.success) {
+                    currentMarkdown = data.markdown;
+                    currentFilename = data.filename;
+                    showResult(data);
+                } else {
+                    showAlert(data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showAlert('파일 업로드 중 오류가 발생했습니다: ' + error.message, 'danger');
+            });
+        }
+        
+        function showResult(data) {
+            // 파일 정보 표시
+            const pageInfo = (data.page_numbers && data.page_numbers.length > 0) ? 
+                `페이지 ${data.page_numbers.join(', ')}` : 
+                (data.page_input ? `페이지 ${data.page_input}` : '전체 페이지');
+            
+            document.getElementById('fileInfo').innerHTML = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>파일명:</strong> ${data.filename}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>페이지:</strong> ${pageInfo}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>엔진:</strong> ${data.engine}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>처리 시간:</strong> ${data.timestamp}
+                    </div>
+                </div>
+            `;
+            
+            // 마크다운 표시
+            document.getElementById('markdownContent').textContent = data.markdown;
+            
+            // 테이블 표시
+            const tablesContent = document.getElementById('tablesContent');
+            if (data.tables && data.tables.length > 0) {
+                tablesContent.innerHTML = data.tables.map(table => `
+                    <div class="table-container">
+                        <h6 class="table-title">${table.title}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        ${table.columns.map(col => `<th>${col}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${table.data.map(row => `
+                                        <tr>
+                                            ${table.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                tablesContent.innerHTML = '<div class="alert alert-info">추출된 테이블이 없습니다.</div>';
+            }
+            
+            document.getElementById('resultSection').style.display = 'block';
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function hideResult() {
+            document.getElementById('resultSection').style.display = 'none';
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.main-container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // 5초 후 자동 제거
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        function downloadMarkdown() {
+            if (!currentMarkdown) return;
+            
+            const blob = new Blob([currentMarkdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFilename.replace('.pdf', '.md');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
